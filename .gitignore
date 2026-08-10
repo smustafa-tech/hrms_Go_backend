@@ -1,6 +1,6 @@
 .env
 server
-main
+/main
 tmp/
 .DS_Store
 .vscode/

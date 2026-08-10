@@ -1,0 +1,7 @@
+.env
+server
+main
+tmp/
+.DS_Store
+.vscode/
+.idea/

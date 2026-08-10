@@ -1,0 +1,43 @@
+# ─── Git ───────────────────────────────────────────────
+# Your git history has no place inside a Docker image.
+# It adds size and exposes commit history.
+.git
+.gitignore
+
+# ─── Environment file ──────────────────────────────────
+# NEVER bake secrets into an image.
+# Passwords, JWT secrets, DB credentials must be passed
+# at runtime via docker run --env-file, not baked in.
+.env
+
+# ─── Air (hot-reload dev tool) ─────────────────────────
+# Air is only for local development. Docker does not need it.
+.air.toml
+tmp/
+
+# ─── Local compiled binary ─────────────────────────────
+# You may have built the binary locally (the "server" file).
+# Docker will compile its own clean binary inside the builder stage.
+server
+
+# ─── Uploads folder ────────────────────────────────────
+# User-uploaded files should NOT be inside the image.
+# In production, uploads go to a volume or cloud storage (e.g. S3).
+uploads/
+
+# ─── Docs ──────────────────────────────────────────────
+# Swagger/API docs are not needed to run the server.
+docs/
+
+# ─── Migrations ────────────────────────────────────────
+# GORM AutoMigrate handles migrations in code.
+# If you later use SQL migration files, you'd include them.
+# For now, exclude the empty folder.
+migrations/
+
+# ─── IDE and OS files ──────────────────────────────────
+# These are your editor's personal config files.
+# They have zero value inside a Docker image.
+.vscode/
+.idea/
+*.DS_Store

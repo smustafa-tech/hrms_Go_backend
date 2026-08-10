@@ -1,7 +1,10 @@
 module github.com/smustafa-tech/hrms-backend
 
 go 1.25.0
-
+//ac5ed7a5-6188-4b84-bbbd-f73658b19928 railway API TOKENS KEY
+//a15402ea-2e6f-43be-bec2-5508b263e84b backend service id 
+//737615fe-a134-4cac-a46a-d66b6fc2325b postgres database id
+// frontend Service ID: 8cd065f1-ef5b-41f4-be5d-d6f44906590f
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1

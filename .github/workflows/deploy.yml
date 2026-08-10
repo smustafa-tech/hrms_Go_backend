@@ -1,111 +1,51 @@
-# ╔══════════════════════════════════════════════════════════════╗
-# ║           HRMS Backend — CI/CD Pipeline                     ║
-# ║                                                             ║
-# ║  यह file GitHub Actions को बताती है:                       ║
-# ║  "जब भी main branch पर code push हो —                      ║
-# ║   यह सारे steps automatically चलाओ"                        ║
-# ╚══════════════════════════════════════════════════════════════╝
-
-# Pipeline का नाम — GitHub Actions UI में यही दिखेगा
 name: HRMS Backend CI/CD
 
-# ─────────────────────────────────────────────────────────────
-# TRIGGER — Pipeline कब चलेगी?
-# ─────────────────────────────────────────────────────────────
 on:
   push:
     branches:
-      - main        # main branch पर push होने पर चलेगी
+      - main
   pull_request:
     branches:
-      - main        # main branch पर PR आने पर भी चलेगी
+      - main
 
-# ─────────────────────────────────────────────────────────────
-# JOBS — Pipeline में क्या-क्या होगा?
-# ─────────────────────────────────────────────────────────────
 jobs:
 
-  # ───────────────────────────────────────────────────────────
-  # JOB 1 — Build & Test
-  # Purpose: Code compile होता है? कोई error तो नहीं?
-  # ───────────────────────────────────────────────────────────
   build:
-    # यह job किस machine पर चलेगी?
-    # ubuntu-latest = GitHub का free Linux server
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1 — Code checkout
-      # GitHub के server पर तुम्हारा code copy करो
-      # बिना इसके बाकी steps को code नहीं मिलेगा
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2 — Go setup
-      # GitHub server पर Go install करो
-      # वही version जो go.mod में है
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
 
-      # Step 3 — Dependencies download
-      # go.mod में listed सारी libraries download करो
       - name: Download dependencies
         run: go mod download
 
-      # Step 4 — Build check
-      # Code compile होता है या नहीं check करो
-      # अगर कोई syntax error है → यहाँ fail होगा
-      # ./... मतलब सारे packages build करो
       - name: Build
         run: go build ./...
 
-  # ───────────────────────────────────────────────────────────
-  # JOB 2 — Docker Build & Push
-  # Purpose: Docker image बनाओ और Docker Hub पर push करो
-  # यह job सिर्फ main branch push पर चलेगी (PR पर नहीं)
-  # ───────────────────────────────────────────────────────────
   docker:
-    # यह job "build" job के बाद चलेगी
-    # अगर build fail हो तो यह job नहीं चलेगी
     needs: build
-
-    # सिर्फ main branch पर push होने पर चलेगी
-    # PR पर image push नहीं होगी
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1 — Code checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2 — Docker Buildx setup
-      # Buildx = advanced Docker build tool
-      # Multi-platform builds support करता है
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Step 3 — Docker Hub Login
-      # GitHub Secrets से credentials लो
-      # ${{ secrets.DOCKER_USERNAME }} = वो secret जो तुमने add किया था
-      # यह values कभी logs में नहीं दिखतीं — encrypted रहती हैं
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 4 — Docker image build और push
-      # context: . = current folder से build करो (Dockerfile यहाँ है)
-      # push: true = build के बाद Docker Hub पर push करो
-      # tags: image का नाम और version
-      #   hrmsmustafa/hrms-backend:latest → हमेशा latest version
-      #   hrmsmustafa/hrms-backend:${{ github.sha }} → exact commit का version
-      #   github.sha = commit का unique ID (e.g. a3f9b2c1)
-      #   इससे पुराने versions भी Docker Hub पर रहते हैं
       - name: Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -114,7 +54,13 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/hrms-backend:latest
             ${{ secrets.DOCKER_USERNAME }}/hrms-backend:${{ github.sha }}
-          # Cache — पिछली build का cache use करो
-          # इससे build fast होती है
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy to Railway
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"serviceId": "${{ secrets.RAILWAY_SERVICE_ID }}"}' \
+            https://backboard.railway.app/api/v1/deployments

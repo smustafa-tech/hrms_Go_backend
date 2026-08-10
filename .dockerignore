@@ -18,6 +18,7 @@ tmp/
 # ─── Local compiled binary ─────────────────────────────
 # You may have built the binary locally (the "server" file).
 # Docker will compile its own clean binary inside the builder stage.
+# NOTE: This matches the "server" binary, not directories named "server"
 server
 
 # ─── Uploads folder ────────────────────────────────────
@@ -41,3 +42,10 @@ migrations/
 .vscode/
 .idea/
 *.DS_Store
+
+# ─── GitHub Actions ────────────────────────────────────
+# CI/CD workflow files don't need to be in the image
+.github/
+
+# ─── Test and build outputs ────────────────────────────
+*.out

@@ -17,10 +17,12 @@ func main() {
 
 	router := gin.Default()
 
-	// CORS — allow both Docker frontend and Vite dev server
+	// CORS — allow all frontend origins
 	allowedOrigins := map[string]bool{
-		"http://localhost:3000": true, // Docker Nginx (production)
-		"http://localhost:5173": true, // Vite dev server (development)
+		"http://localhost:3000":                                 true, // Docker local
+		"http://localhost:5173":                                 true, // Vite dev
+		"https://hrms-frontend-production-c37d.up.railway.app": true, // Railway old
+		"https://hrms-frontend-production-f099.up.railway.app": true, // Railway new
 	}
 
 	router.Use(func(c *gin.Context) {

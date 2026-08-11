@@ -45,6 +45,40 @@ func main() {
 	authSvc := service.NewAuthService(authRepo)
 	authHandler := handler.NewAuthHandler(authSvc)
 
+	// Wire user and settings
+	userRepo := repository.NewUserRepository(config.DB)
+	userSvc := service.NewUserService(userRepo)
+	companyRepo := repository.NewCompanyRepository(config.DB)
+	companySvc := service.NewCompanyService(companyRepo)
+	settingsRepo := repository.NewSettingsRepository(config.DB)
+	settingsSvc := service.NewSettingsService(settingsRepo)
+	userHandler := handler.NewUserHandler(userSvc, companySvc, settingsSvc)
+
+	// Wire notifications
+	notifRepo := repository.NewNotificationRepository(config.DB)
+	notifSvc := service.NewNotificationService(notifRepo)
+	notifHandler := handler.NewNotificationHandler(notifSvc)
+
+	// Wire queries
+	queryRepo := repository.NewQueryRepository(config.DB)
+	querySvc := service.NewQueryService(queryRepo)
+	queryHandler := handler.NewQueryHandler(querySvc)
+
+	// Wire leave
+	leaveRepo := repository.NewLeaveRepository(config.DB)
+	leaveSvc := service.NewLeaveService(leaveRepo)
+	leaveHandler := handler.NewLeaveHandler(leaveSvc)
+
+	// Wire payroll
+	payrollRepo := repository.NewPayrollRepository(config.DB)
+	payrollSvc := service.NewPayrollService(payrollRepo)
+	payrollHandler := handler.NewPayrollHandler(payrollSvc)
+
+	// Wire documents
+	docRepo := repository.NewDocumentRepository(config.DB)
+	docSvc := service.NewDocumentService(docRepo)
+	docHandler := handler.NewDocumentHandler(docSvc)
+
 	// Wire employee
 	empRepo := repository.NewEmployeeRepository(config.DB)
 	empSvc := service.NewEmployeeService(empRepo)
@@ -57,7 +91,7 @@ func main() {
 
 	api := router.Group("/api")
 	routes.RegisterAuthRoutes(api, authHandler)
-	routes.RegisterProtectedRoutes(api, empHandler, attHandler)
+	routes.RegisterProtectedRoutes(api, userHandler, notifHandler, queryHandler, leaveHandler, payrollHandler, docHandler, empHandler, attHandler)
 
 	port := config.GetEnv("PORT")
 	if port == "" {

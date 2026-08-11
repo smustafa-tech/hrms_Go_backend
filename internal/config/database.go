@@ -27,7 +27,20 @@ func ConnectDatabase() {
 		log.Fatal("❌ Database connection failed:", err)
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Employee{}, &models.Attendance{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Employee{},
+		&models.Attendance{},
+		&models.Notification{},
+		&models.Query{},
+		&models.QueryReply{},
+		&models.Leave{},
+		&models.LeaveBalance{},
+		&models.Payroll{},
+		&models.Document{},
+		&models.Company{},
+		&models.SystemSettings{},
+	); err != nil {
 		log.Fatal("❌ AutoMigrate failed:", err)
 	}
 

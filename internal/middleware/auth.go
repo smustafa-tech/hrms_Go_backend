@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -34,10 +35,18 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", claims["id"])
-		c.Set("email", claims["email"])
-		c.Set("role", claims["role"])
-		c.Set("slug", claims["slug"])
+		if id, exists := claims["id"]; exists {
+			c.Set("userID", fmt.Sprintf("%v", id))
+		}
+		if email, exists := claims["email"]; exists {
+			c.Set("email", fmt.Sprintf("%v", email))
+		}
+		if role, exists := claims["role"]; exists {
+			c.Set("role", fmt.Sprintf("%v", role))
+		}
+		if slug, exists := claims["slug"]; exists {
+			c.Set("slug", fmt.Sprintf("%v", slug))
+		}
 		c.Next()
 	}
 }

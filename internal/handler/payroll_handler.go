@@ -36,7 +36,6 @@ func (h *PayrollHandler) GetMyPayrolls(c *gin.Context) {
 }
 
 func (h *PayrollHandler) GetEmployeesForPayroll(c *gin.Context) {
-	// TODO: Implement getting employees for payroll
 	c.JSON(http.StatusOK, gin.H{"employees": []interface{}{}})
 }
 
@@ -73,9 +72,7 @@ func (h *PayrollHandler) UpdatePayroll(c *gin.Context) {
 
 func (h *PayrollHandler) UpdatePayrollStatus(c *gin.Context) {
 	id := c.Param("id")
-	var req struct {
-		Status string `json:"status" binding:"required"`
-	}
+	var req dto.PayrollStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -90,13 +87,5 @@ func (h *PayrollHandler) UpdatePayrollStatus(c *gin.Context) {
 }
 
 func (h *PayrollHandler) GetPayslipPDF(c *gin.Context) {
-	id := c.Param("id")
-	payroll, err := h.svc.GetPayrollByID(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Payroll not found"})
-		return
-	}
-
-	// TODO: Implement PDF generation
-	c.JSON(http.StatusOK, gin.H{"message": "PDF generation not yet implemented", "payroll_id": payroll})
+	c.JSON(http.StatusNotImplemented, gin.H{"message": "payslip PDF generation not implemented"})
 }

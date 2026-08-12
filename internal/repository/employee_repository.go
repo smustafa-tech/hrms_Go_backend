@@ -47,6 +47,10 @@ func (r *EmployeeRepository) SoftDelete(empID string) error {
 		Update("deleted_at", gorm.Expr("NOW()")).Error
 }
 
+func (r *EmployeeRepository) DeleteByEmpID(empID string) error {
+	return r.db.Where("emp_id = ?", empID).Delete(&models.Employee{}).Error
+}
+
 func (r *EmployeeRepository) EmpIDExists(empID string) bool {
 	var count int64
 	r.db.Model(&models.Employee{}).Where("emp_id = ?", empID).Count(&count)

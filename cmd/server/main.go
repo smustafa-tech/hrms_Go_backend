@@ -14,22 +14,24 @@ import (
 
 func parseAllowedOrigins(envValue string) map[string]bool {
 	defaults := map[string]bool{
-		"http://localhost:3000":                                 true,
-		"http://localhost:5173":                                 true,
-		"https://hrms-frontend-production-c37d.up.railway.app":  true,
-		"https://hrms-frontend-production-f099.up.railway.app":  true,
-		"https://hrms-frontend-production-039b.up.railway.app":  true,
-	}
-
-	if envValue == "" {
-		return defaults
+		"http://localhost:3000":                                true,
+		"http://localhost:5173":                                true,
+		"https://hrms-frontend-production-c37d.up.railway.app": true,
+		"https://hrms-frontend-production-f099.up.railway.app": true,
+		"https://hrms-frontend-production-039b.up.railway.app": true,
 	}
 
 	result := make(map[string]bool)
-	for _, origin := range strings.Split(envValue, ",") {
-		trimmed := strings.TrimSpace(origin)
-		if trimmed != "" {
-			result[trimmed] = true
+	for k, v := range defaults {
+		result[k] = v
+	}
+
+	if envValue != "" {
+		for _, origin := range strings.Split(envValue, ",") {
+			trimmed := strings.TrimSpace(origin)
+			if trimmed != "" {
+				result[trimmed] = true
+			}
 		}
 	}
 	return result
@@ -100,7 +102,8 @@ func main() {
 
 	// Wire employee
 	empRepo := repository.NewEmployeeRepository(config.DB)
-	empSvc := service.NewEmployeeService(empRepo)
+	employeeUserRepo := repository.NewUserRepository(config.DB)
+	empSvc := service.NewEmployeeService(empRepo, employeeUserRepo)
 	empHandler := handler.NewEmployeeHandler(empSvc)
 
 	// Wire attendance

@@ -1,19 +1,25 @@
 package service
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"regexp"
+	"strings"
 
 	"github.com/smustafa-tech/hrms-backend/internal/dto"
 	"github.com/smustafa-tech/hrms-backend/internal/models"
 	"github.com/smustafa-tech/hrms-backend/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type EmployeeService struct {
-	repo *repository.EmployeeRepository
+	repo     *repository.EmployeeRepository
+	userRepo *repository.UserRepository
 }
 
-func NewEmployeeService(repo *repository.EmployeeRepository) *EmployeeService {
-	return &EmployeeService{repo: repo}
+func NewEmployeeService(repo *repository.EmployeeRepository, userRepo *repository.UserRepository) *EmployeeService {
+	return &EmployeeService{repo: repo, userRepo: userRepo}
 }
 
 func salaryVal(s *float64) float64 {
@@ -21,6 +27,22 @@ func salaryVal(s *float64) float64 {
 		return 0
 	}
 	return *s
+}
+
+func generateTemporaryPassword() string {
+	buf := make([]byte, 8)
+	if _, err := rand.Read(buf); err != nil {
+		return "Temp@1234"
+	}
+	return "Temp@" + hex.EncodeToString(buf)[:8]
+}
+
+func normalizeEmail(email string) string {
+	return strings.TrimSpace(strings.ToLower(email))
+}
+
+func normalizeRole(role string) string {
+	return strings.ToLower(strings.TrimSpace(role))
 }
 
 func (s *EmployeeService) GetAllEmployees() (map[string]interface{}, error) {
@@ -49,38 +71,59 @@ func (s *EmployeeService) GetAllEmployees() (map[string]interface{}, error) {
 	}, nil
 }
 
-func (s *EmployeeService) CreateEmployee(req dto.CreateEmployeeRequest) (*models.Employee, error) {
-	if s.repo.EmpIDExists(req.EmpID) {
-		return nil, errors.New("employee ID already exists")
+func (s *EmployeeService) CreateEmployee(req dto.CreateEmployeeRequest, slug string) (*models.Employee, string, error) {
+	firstName := strings.TrimSpace(req.FirstName)
+	middleName := strings.TrimSpace(req.MiddleName)
+	lastName := strings.TrimSpace(req.LastName)
+	email := normalizeEmail(req.Email)
+	phone := strings.TrimSpace(req.Phone)
+	adharCard := strings.TrimSpace(req.AdharCard)
+	designation := strings.TrimSpace(req.Designation)
+	role := normalizeRole(req.Role)
+	if role == "" {
+		role = "employee"
 	}
-	if s.repo.EmailExists(req.Email) {
-		return nil, errors.New("email already registered")
+	department := strings.TrimSpace(req.Department)
+	workMode := strings.TrimSpace(req.WorkMode)
+	if workMode == "" {
+		workMode = "office"
+	}
+
+	if firstName == "" || lastName == "" || email == "" || designation == "" || department == "" || req.EmpID == "" || strings.TrimSpace(req.TemporaryPassword) == "" {
+		return nil, "", errors.New("all required employee fields and temporary password must be provided")
+	}
+	if !regexp.MustCompile(`^\+91\s?[6-9]\d{9}$`).MatchString(phone) {
+		return nil, "", errors.New("phone number must be in format +91XXXXXXXXXX")
+	}
+	if adharCard == "" {
+		return nil, "", errors.New("aadhaar number is required")
+	}
+	if s.repo.EmpIDExists(req.EmpID) {
+		return nil, "", errors.New("employee ID already exists")
+	}
+	if s.repo.EmailExists(email) {
+		return nil, "", errors.New("email already registered")
+	}
+	if _, err := s.userRepo.FindByEmail(email); err == nil {
+		return nil, "", errors.New("employee login already exists for this email")
 	}
 
 	status := req.Status
 	if status == "" {
 		status = "active"
 	}
-	role := req.Role
-	if role == "" {
-		role = "employee"
-	}
-	workMode := req.WorkMode
-	if workMode == "" {
-		workMode = "office"
-	}
 
 	emp := &models.Employee{
 		EmpID:         req.EmpID,
-		FirstName:     req.FirstName,
-		MiddleName:    req.MiddleName,
-		LastName:      req.LastName,
-		Email:         req.Email,
-		Phone:         req.Phone,
-		AdharCard:     req.AdharCard,
-		Designation:   req.Designation,
+		FirstName:     firstName,
+		MiddleName:    middleName,
+		LastName:      lastName,
+		Email:         email,
+		Phone:         phone,
+		AdharCard:     adharCard,
+		Designation:   designation,
 		Role:          role,
-		Department:    req.Department,
+		Department:    department,
 		DateOfJoining: req.DateOfJoining,
 		Status:        status,
 		Salary:        salaryVal(req.Salary),
@@ -90,9 +133,34 @@ func (s *EmployeeService) CreateEmployee(req dto.CreateEmployeeRequest) (*models
 	}
 
 	if err := s.repo.Create(emp); err != nil {
-		return nil, errors.New("failed to create employee")
+		return nil, "", errors.New("failed to create employee")
 	}
-	return emp, nil
+
+	tempPassword := strings.TrimSpace(req.TemporaryPassword)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
+	if err != nil {
+		_ = s.repo.DeleteByEmpID(req.EmpID)
+		return nil, "", errors.New("failed to generate employee login credentials")
+	}
+
+	if slug == "" {
+		slug = "default"
+	}
+	user := &models.User{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Password:  string(hashedPassword),
+		Phone:     phone,
+		Slug:      slug,
+		Role:      role,
+	}
+	if err := s.userRepo.Create(user); err != nil {
+		_ = s.repo.DeleteByEmpID(req.EmpID)
+		return nil, "", errors.New("failed to create employee login credentials")
+	}
+
+	return emp, tempPassword, nil
 }
 
 func (s *EmployeeService) UpdateEmployee(empID string, req dto.UpdateEmployeeRequest) (*models.Employee, error) {

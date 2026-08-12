@@ -34,13 +34,20 @@ func (h *EmployeeHandler) CreateEmployee(c *gin.Context) {
 		return
 	}
 
-	emp, err := h.svc.CreateEmployee(req)
+	slug, _ := c.Get("slug")
+	organizationSlug, _ := slug.(string)
+
+	emp, tempPassword, err := h.svc.CreateEmployee(req, organizationSlug)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Employee created successfully", "data": emp})
+	c.JSON(http.StatusCreated, gin.H{
+		"message":           "Employee created successfully",
+		"temporaryPassword": tempPassword,
+		"data":              emp,
+	})
 }
 
 // PUT /api/employee/update-employee-data/:emp_id

@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"github.com/smustafa-tech/hrms-backend/internal/dto"
 	"github.com/smustafa-tech/hrms-backend/internal/models"
 	"github.com/smustafa-tech/hrms-backend/internal/repository"
@@ -88,7 +89,7 @@ func (s *PayrollService) GetSummary(month, year int) (map[string]interface{}, er
 
 	return map[string]interface{}{
 		"summary": map[string]interface{}{
-			"count": count,
+			"count":       count,
 			"totalAmount": total,
 		},
 		"payrolls": filtered,

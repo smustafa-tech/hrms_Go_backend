@@ -98,8 +98,8 @@ func (s *LeaveService) deductBalance(leave *models.Leave) error {
 	balance, err := s.repo.FindBalance(leave.UserID, year.Year())
 	if err != nil {
 		balance = &models.LeaveBalance{
-			EmployeeID:   leave.UserID,
-			Year:         year.Year(),
+			EmployeeID: leave.UserID,
+			Year:       year.Year(),
 		}
 		if err := s.repo.CreateBalance(balance); err != nil {
 			return err
@@ -131,8 +131,8 @@ func (s *LeaveService) GetMyLeaveBalance(userID string) (*models.LeaveBalance, e
 	balance, err := s.repo.FindBalance(userID, year)
 	if err != nil {
 		balance = &models.LeaveBalance{
-			EmployeeID:  userID,
-			Year:        year,
+			EmployeeID: userID,
+			Year:       year,
 		}
 		if err := s.repo.CreateBalance(balance); err != nil {
 			return nil, err

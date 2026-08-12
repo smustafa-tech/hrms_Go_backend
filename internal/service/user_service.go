@@ -3,10 +3,10 @@ package service
 import (
 	"errors"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/smustafa-tech/hrms-backend/internal/dto"
 	"github.com/smustafa-tech/hrms-backend/internal/models"
 	"github.com/smustafa-tech/hrms-backend/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {

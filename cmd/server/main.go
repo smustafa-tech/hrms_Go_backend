@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/smustafa-tech/hrms-backend/internal/config"
@@ -11,19 +12,37 @@ import (
 	"github.com/smustafa-tech/hrms-backend/internal/service"
 )
 
+func parseAllowedOrigins(envValue string) map[string]bool {
+	defaults := map[string]bool{
+		"http://localhost:3000":                                 true,
+		"http://localhost:5173":                                 true,
+		"https://hrms-frontend-production-c37d.up.railway.app":  true,
+		"https://hrms-frontend-production-f099.up.railway.app":  true,
+		"https://hrms-frontend-production-039b.up.railway.app":  true,
+	}
+
+	if envValue == "" {
+		return defaults
+	}
+
+	result := make(map[string]bool)
+	for _, origin := range strings.Split(envValue, ",") {
+		trimmed := strings.TrimSpace(origin)
+		if trimmed != "" {
+			result[trimmed] = true
+		}
+	}
+	return result
+}
+
 func main() {
 	config.LoadEnv()
 	config.ConnectDatabase()
 
 	router := gin.Default()
 
-	// CORS — allow all frontend origins
-	allowedOrigins := map[string]bool{
-		"http://localhost:3000":                                 true, // Docker local
-		"http://localhost:5173":                                 true, // Vite dev
-		"https://hrms-frontend-production-c37d.up.railway.app": true, // Railway old
-		"https://hrms-frontend-production-f099.up.railway.app": true, // Railway new
-	}
+	// CORS — allow origins from env var (comma-separated), with defaults
+	allowedOrigins := parseAllowedOrigins(config.GetEnv("ALLOWED_ORIGINS"))
 
 	router.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")

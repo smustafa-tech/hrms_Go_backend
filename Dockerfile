@@ -164,11 +164,11 @@ EXPOSE 5000
 #   --start-period=15s → wait 15s after start before first check
 #                        (gives your app time to connect to DB)
 #   --retries=3     → mark unhealthy after 3 consecutive failures
-# wget -qO- http://localhost:5000/api/auth/user/login
-#   A lightweight HTTP check. If it gets any response (even 400),
-#   the container is alive. We use wget because curl is not installed.
+# The login endpoint accepts POST only, so a GET health check against it always
+# returns 404. BusyBox's netcat is available in Alpine and verifies that the
+# application is actively listening without invoking an application endpoint.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD wget -qO- --spider http://localhost:5000/api/auth/user/login || exit 1
+    CMD nc -z -w 5 127.0.0.1 5000 || exit 1
 
 # CMD is the command that runs when the container starts.
 # ["./main"] runs the compiled binary directly.
